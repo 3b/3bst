@@ -28,8 +28,10 @@
 (defvar *default-foreground* 7)
 (defvar *default-background* 0)
 (defvar *tab-spaces* 8)
-(defvar *vt-iden* "...")
+(defvar *vt-iden* "[?6c") ;; "1;2"=vt100w/advanced video option, "6"=vt102
 (defvar *redraw-timeout* (/ 80 1000.0)) ;; 80 ms
+
+(defvar *bindings* (make-hash-table :test 'equalp))
 
 ;;;  Arbitrary sizes
 #++(defconstant +UTF-INVALID+ #xFFFD)
@@ -63,7 +65,7 @@ to DEFAULt if not already set"
         (i (gensym)))
    `(let ((,a ,array)
           (,i ,index))
-      (when (< (fill-pointer ,a) ,i)
+      (when (< (fill-pointer ,a) (1+ ,i))
         (unless (adjustable-array-p ,a)
           (assert (< ,i (array-total-size ,a))))
         (adjust-array ,a (max (1+ ,i) (array-total-size ,a))
@@ -245,6 +247,11 @@ to DEFAULt if not already set"
    (y :accessor y :initform 0)
    (state :accessor state :initform 0)))
 
+(defmethod (setf x) :before (new (c tcursor))
+  (assert (numberp new)))
+(defmethod (setf y) :before (new (c tcursor))
+  (assert (numberp new)))
+
 ;; CSI Escape sequence structs
 ;; ESC '[' [[ [<priv>] <arg> [;]] <mode>]
 (defclass csi-escape ()
@@ -345,7 +352,7 @@ to DEFAULt if not already set"
   (setf (slot-value term 'dirty)
         (make-array (rows term) :element-type 'bit))
   (setf (slot-value term 'tabs)
-        (make-array (rows term) :element-type 'bit))
+        (make-array (columns term) :element-type 'bit))
   (setf (bottom term) (1- (rows term))))
 
 ;;; Globals
@@ -388,6 +395,7 @@ child process"
 
 
 (defun tty-write (characters &key (term *term*))
+  (format t "tty-write ~s~%" characters)
   (when *write-to-child-hook*
     (funcall *write-to-child-hook* term characters)))
 
@@ -525,12 +533,18 @@ child process"
 
 ;;; for absolute user moves, when decom is set
 (defun tmoveato (x y &key (term *term*))
+  (format *debug-io* "moveato ~s,~s -> ~s ~s~%"
+          (x (cursor term)) (y (cursor term))
+          x y)
   (tmoveto x (+ y (if (logtest (state (cursor term)) +cursor-origin+)
                       (top term)
                       0))
            :term term))
 
 (defun tmoveto (x y &key (term *term*))
+  (format *debug-io* "moveto ~s,~s -> ~s ~s~%"
+          (x (cursor term)) (y (cursor term))
+          x y)
   (let ((miny 0)
         (maxy (1- (rows term)))
         (c (cursor term)))
@@ -577,12 +591,12 @@ child process"
                       +attr-wide+))))
   (setf (aref (dirty term) y) 1)
   (let ((g (glyph-at (screen term) y x)))
-    (format t "~& ~a @ ~a ~a (~a -> " c x y (c g))
+    #++(format t "~& ~a @ ~a ~a (~a -> " c x y (c g))
     (setf (c g) c
           (mode g) (mode attr)
           (fg g) (fg attr)
           (bg g) (bg attr))
-    (format t "~a / ~a)~%" (c g)
+    #++(format t "~a / ~a)~%" (c g)
             (c (aref (aref (screen *term*) y) x)))))
 
 
@@ -904,7 +918,7 @@ child process"
              (#\g ;; TBC -- Tabulation clear
               ;; not sure if it should error or default here?
               (ensure-aref (arguments csi) 0 0)
-              (case (aref (arguments 0))
+              (case (aref (arguments csi) 0)
                 (0 ;; clear current tab stop
                  (setf (aref (tabs term) (x (cursor term))) 0))
                 (3 ;; clear all the tabs
@@ -923,7 +937,7 @@ child process"
                #\f);; HVP
               (ensure-aref (arguments csi) 0 1)
               (ensure-aref (arguments csi) 1 1)
-              (tmoveto (1- (aref (arguments csi) 1))
+              (tmoveato (1- (aref (arguments csi) 1))
                        (1- (aref (arguments csi) 0))))
              (#\I ;; CHT -- Cursor Forward Tabulation <n> tab stops
               (ensure-aref (arguments csi) 0 1)
@@ -1057,7 +1071,9 @@ child process"
         do (vector-push-extend a (arguments str)))
   #++(strparse esc)
   (let* ((args (arguments str))
-         (par (parse-integer (aref args 0)))
+         (par (if (equal (aref args 0) "")
+                  0
+                  (parse-integer (aref args 0))))
          (narg (length args)))
     (case (str-type str)
     (#\] ;; OSC -- Operating System Command
@@ -1162,7 +1178,8 @@ child process"
        (loop repeat (abs n)
              when (and x (plusp x))
                do (setf x (position 1 (tabs term) :from-end t :end x)))))
-    (tmoveto x (y (cursor term)) :term term)))
+    (tmoveto (or x (if (plusp n) (1- (columns term)) 0))
+             (y (cursor term)) :term term)))
 
 (defun techo (string &key (term *term*))
   (let ((start 0))
@@ -1231,7 +1248,7 @@ child process"
       (7 ;; \a BEL
        (if (logtest +esc-str-end+ (escape term))
            ;; backwards compatibility to xterm 
-           (strhandle (csi-escape term) :term term)
+           (strhandle (str-escape term) :term term)
            ;; todo: pass to caller to either play sound or flash term?
            ))
       (#o33 ;; ESC
@@ -1284,6 +1301,7 @@ child process"
     (when (or (= cc 7)
               (= cc #o30)
               (controlc1-p cc))
+      (format t "")
       (setf (escape term) (logandc2 (escape term)
                                     (logior +esc-str-end+ +esc-str+))))))
 

@@ -45,10 +45,10 @@
 #++(defconstant +DRAW-BUF-SIZ+ 20*1024)
 
 (defun controlc0-p (c)
-  (or (= c 177) (< 0 c #x1f)))
+  (or (= c 177) (<= 0 c #x1f)))
 
 (defun controlc1-p (c)
-  (< #x80 c #x9f))
+  (<= #x80 c #x9f))
 
 (defun control-p (c)
   (or (controlc1-p c) (controlc0-p c)))
@@ -99,10 +99,15 @@ to DEFAULt if not already set"
 (defmacro modbit (x set mask)
   ;; fixme: avoid multiple evaluation
   `(setf ,x
-         ,(if set
-              `(logior ,x ,mask)
-              `(logandc2 ,x ,mask)
-              )))
+         ,(case set
+            ((nil)
+             `(logandc2 ,x ,mask))
+            ((t)
+             `(logior ,x ,mask))
+            (t
+             `(if ,set
+                  (logior ,x ,mask)
+                  (logandc2 ,x ,mask))))))
 
 (defun truecolor (r g b)
   (logior (ash 1 24)
@@ -241,6 +246,31 @@ to DEFAULt if not already set"
 
 (deftype line () '(vector glyph *))
 
+(defun move-glyphs (line &key (start1 0) (start2 0)
+                           (end1 (length line))
+                           (end2 (length line)))
+  ;; fixme: better representation of LINE and/or GLYPH for easier copying?
+  ;; just using REPLACE on LINE ends up with same GLYPH object in
+  ;; multiple places
+  ;; -- maybe just use REPLACE and fill the gap with new GLYPHs?
+  (if (<= start1 start2)
+      (loop for i from start1 below end1
+            for j from start2 below end2
+            for d = (aref line i)
+            for s = (aref line j)
+            do (setf (c d) (c s)
+                     (mode d) (mode s)
+                     (fg d) (fg s)
+                     (bg d) (bg s)))
+      (loop for i from (1- end1) downto start1
+            for j from (1- end2) downto start2
+            for d = (aref line i)
+            for s = (aref line j)
+            do (setf (c d) (c s)
+                     (mode d) (mode s)
+                     (fg d) (fg s)
+                     (bg d) (bg s)))))
+
 (defclass tcursor ()
   ((attributes :accessor attributes :initform (make-instance 'glyph))
    (x :accessor x :initform 0)
@@ -251,6 +281,19 @@ to DEFAULt if not already set"
   (assert (numberp new)))
 (defmethod (setf y) :before (new (c tcursor))
   (assert (numberp new)))
+
+(defun copy-glyph (g &key (to (make-instance 'glyph)))
+  (setf (c to) (c g)
+        (mode to) (mode g)
+        (fg to) (fg g)
+        (bg to) (bg g))
+  to)
+(defun copy-cursor (c &key (to (make-instance 'tcursor)))
+  (copy-glyph (attributes c) :to (attributes to))
+  (setf (x to) (x c)
+        (y to) (y c)
+        (state to) (state c))
+  to)
 
 ;; CSI Escape sequence structs
 ;; ESC '[' [[ [<priv>] <arg> [;]] <mode>]
@@ -320,7 +363,7 @@ to DEFAULt if not already set"
    (top :accessor top :initform 0)
    (bottom :accessor bottom :initform 0)
    ;; terminal mode flags
-   (mode :accessor mode :initform +mode-crlf+)
+   (mode :accessor mode :initform +mode-crlf+ :initarg :mode)
    ;; escape state flags
    (escape :accessor escape :initform 0)
    ;; charset table translation
@@ -435,10 +478,11 @@ child process"
 (defun tcursor (mode &key (term *term*))
   (let ((index (if (attribute-set-p +mode-altscreen+ :term term) 1 0)))
     (if (eql mode :cursor-save)
-        (setf (aref (saved-cursors term) index) (cursor term))
+        (setf (aref (saved-cursors term) index)
+              (copy-cursor (cursor term)))
         (progn
           (let ((c (aref (saved-cursors term) index)))
-            (setf (cursor term) c)
+            (copy-cursor c :to (cursor term))
             (tmoveto (x c) (y c)))))))
 
 (defun treset (&key (term *term*))
@@ -511,6 +555,7 @@ child process"
     (flet ((*p ()
              (aref (buffer csi) p)))
       (setf (fill-pointer (arguments csi)) 0)
+      (setf (priv csi) nil)
       (when (char= (*p) #\?)
         (setf (priv csi) 1)
         (incf p))
@@ -533,7 +578,7 @@ child process"
 
 ;;; for absolute user moves, when decom is set
 (defun tmoveato (x y &key (term *term*))
-  (format *debug-io* "moveato ~s,~s -> ~s ~s~%"
+  #++(format *debug-io* "moveato ~s,~s -> ~s ~s~%"
           (x (cursor term)) (y (cursor term))
           x y)
   (tmoveto x (+ y (if (logtest (state (cursor term)) +cursor-origin+)
@@ -542,7 +587,7 @@ child process"
            :term term))
 
 (defun tmoveto (x y &key (term *term*))
-  (format *debug-io* "moveto ~s,~s -> ~s ~s~%"
+  #++(format *debug-io* "moveto ~s,~s -> ~s ~s~%"
           (x (cursor term)) (y (cursor term))
           x y)
   (let ((miny 0)
@@ -625,7 +670,7 @@ child process"
   (let* ((dest (x (cursor term)))
          (source (+ dest n))
          (line (aref (screen term) (y (cursor term)))))
-    (replace line line :start1 dest :start2 source :end2 (columns term))
+    (move-glyphs line :start1 dest :start2 source :end2 (columns term))
     (tclearregion (- (columns term) n) (y (cursor term))
                   (1- (columns term)) (y (cursor term)))))
 
@@ -634,7 +679,7 @@ child process"
   (let* ((source (x (cursor term)))
          (dest (+ source n))
          (line (aref (screen term) (y (cursor term)))))
-    (replace line line :start1 dest :start2 source :end1 (columns term))
+    (move-glyphs line :start1 dest :start2 source :end1 (columns term))
     (tclearregion source (y (cursor term))
                   (1- dest) (y (cursor term)))))
 
@@ -761,6 +806,8 @@ child process"
         (bottom term) bottom))
 
 (defun tsetmode (priv set args &key (term *term*))
+  (setf set (and set (not (zerop set))))
+;  (break "tsetmode ~s ~s ~s ~s" priv set args term)
   (loop for arg across args
         if priv
           do (case arg
@@ -938,7 +985,7 @@ child process"
               (ensure-aref (arguments csi) 0 1)
               (ensure-aref (arguments csi) 1 1)
               (tmoveato (1- (aref (arguments csi) 1))
-                       (1- (aref (arguments csi) 0))))
+                        (1- (aref (arguments csi) 0))))
              (#\I ;; CHT -- Cursor Forward Tabulation <n> tab stops
               (ensure-aref (arguments csi) 0 1)
               (tputtab (aref (arguments csi) 0) :term term))
@@ -1080,6 +1127,7 @@ child process"
      (case par
        ((0 1 2)
         (when (> narg 1)
+          (format t "set title(~a) to ~s~%" par (aref args 1))
           #++(xsettitle (aref args 1))))
        ((4 ;; color set
          104);; color reset
@@ -1468,7 +1516,7 @@ child process"
        (setf (escape term) 0)
        ;; All characters which form part of a sequence are not printed
        (return-from tputc nil)))
-    (format t "~c" c)
+    #++(format t "~c" c)
     ;; todo:
     ;; if(sel.ob.x != -1 && BETWEEN(term.c.y, sel.ob.y, sel.oe.y))
     ;;   selclear(NULL);
@@ -1479,9 +1527,9 @@ child process"
         (modbit (mode glyph) t +attr-wrap+)
         (tnewline 1 :term term))
       (when (and (logtest +mode-insert+ (mode term))
-                 (< (1+ (x (cursor term)))
+                 (< (+ width (x (cursor term)))
                     (columns term)))
-        (replace line line :start1 (1+ (x (cursor term)))
+        (move-glyphs line :start1 (+ width (x (cursor term)))
                            :start2 (x (cursor term))))
       (when (> (+ width (x (cursor term))) (columns term))
         (tnewline 1 :term term))

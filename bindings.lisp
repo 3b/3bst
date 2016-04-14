@@ -1,4 +1,4 @@
-(in-package #:3bt)
+(in-package #:3bst)
 
 (defvar *key-alias*
   (alexandria:plist-hash-table

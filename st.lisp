@@ -1,22 +1,5 @@
 ;;; See LICENSE for licence details.
-(defpackage #:3bt
-  (:use :cl)
-  (:export
-   #:term
-   #:glyph-at
-   #:c
-   #:glyph-attributes
-   #:dirty
-   #:rows
-   #:columns
-   #:*term*
-   #:*title*
-   #:handle-input
-   #:fg
-   #:bg
-   #:color-rgb)
-  )
-(in-package #:3bt)
+(in-package #:3bst)
 
 ;;; todo: better interface for sending output to child process
 ;; possibly users could subclass TERM and define a method to handle output?

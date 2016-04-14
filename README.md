@@ -9,7 +9,8 @@ general usage (probably missing some details):
 
 (let ((term (make-instance '3bst:term :rows 10 :columns 40)))
 
-  (3bst:handle-input "testing... [31mRed[32mGreen[34mBlue[33m!"
+  (3bst:handle-input (format nil "testing... ~c[31mRed~c[32mGreen~c[34mBlue~c[33m!"
+                             (code-char 27) (code-char 27) (code-char 27) (code-char 27)) ;; (code-char 27) = esc
                      :term term)
 
   (loop with dirty = (3bst:dirty term);;bitvector of 'dirty' flag for each row
@@ -102,7 +103,7 @@ probably will want to use it with something like `SB-EXT:RUN-PROGRAM`, something
                  do (format t "~a" char))
            (format t "~%"))
   ;; send some more input to exit screen and close shell
-  (format (sb-ext:process-input proc) "d")
+  (format (sb-ext:process-input proc) (format nil "~cd~c" (code-char 1) (code-char 4))) ;; ^Ad^D
   (finish-output (sb-ext:process-input proc))
   (sb-thread:join-thread thread))
 

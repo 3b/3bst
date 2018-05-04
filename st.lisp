@@ -1278,7 +1278,7 @@ child process"
        (tnewline (logtest (mode term) +mode-crlf+) :term term))
       (7 ;; \a BEL
        (if (logtest +esc-str-end+ (escape term))
-           ;; backwards compatibility to xterm 
+           ;; backwards compatibility to xterm
            (strhandle (str-escape term) :term term)
            ;; todo: pass to caller to either play sound or flash term?
            ))
@@ -1568,7 +1568,7 @@ child process"
     (loop for i from minrow below rows
           do (flet ((n (s)
                       (setf (aref s i)
-                            (make-array rows
+                            (make-array columns
                                         :element-type '(vector glyph *)
                                         :initial-contents
                                         (coerce
@@ -1599,4 +1599,3 @@ child process"
                (tswapscreen :term term)
                (tcursor :cursor-load :term term))
       (setf (cursor term) c))))
-

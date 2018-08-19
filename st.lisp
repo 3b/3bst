@@ -46,21 +46,21 @@
 to DEFAULt if not already set"
   (let ((a (gensym))
         (i (gensym)))
-   `(let ((,a ,array)
-          (,i ,index))
-      (when (< (fill-pointer ,a) (1+ ,i))
-        (unless (adjustable-array-p ,a)
-          (assert (< ,i (array-total-size ,a))))
-        (adjust-array ,a (max (1+ ,i) (array-total-size ,a))
-                      :fill-pointer (1+ ,i)
-                      :initial-element nil))
-      (unless (and (aref ,a ,i) (plusp (aref ,a ,i)))
-        (setf (aref ,a ,i) ,default)))))
+    `(let ((,a ,array)
+           (,i ,index))
+       (when (< (fill-pointer ,a) (1+ ,i))
+         (unless (adjustable-array-p ,a)
+           (assert (< ,i (array-total-size ,a))))
+         (adjust-array ,a (max (1+ ,i) (array-total-size ,a))
+                       :fill-pointer (1+ ,i)
+                       :initial-element nil))
+       (unless (and (aref ,a ,i) (plusp (aref ,a ,i)))
+         (setf (aref ,a ,i) ,default)))))
 
 #++(let ((a (make-array 6 :fill-pointer 0)))
-  (ensure-aref a 0 2)
-  (ensure-aref a 1 3)
-  a)
+     (ensure-aref a 0 2)
+     (ensure-aref a 1 3)
+     a)
 (defun limit (x a b)
   (min b (max a x)))
 
@@ -211,7 +211,7 @@ to DEFAULt if not already set"
 
 ;; not sure if we want AoS or SoA for term data yet?
 (defclass glyph ()
-   ;; C stores a CL character instead of utf8 encoded string
+  ;; C stores a CL character instead of utf8 encoded string
   ((c :accessor c :initform #\space)
    (mode :accessor mode :initform +attr-null+)
    (fg :accessor fg :initform *default-foreground*)
@@ -222,10 +222,10 @@ to DEFAULt if not already set"
                           +ATTR-UNDERLINE+ +ATTR-BLINK+ +ATTR-REVERSE+
                           +ATTR-INVISIBLE+ +ATTR-STRUCK+ +ATTR-WRAP+
                           +ATTR-WIDE+ +ATTR-WDUMMY+)
-        for key in '(:NULL :BOLD :FAINT :ITALIC :UNDERLINE :BLINK
-                     :REVERSE :INVISIBLE :STRUCK :WRAP :WIDE :WDUMMY)
-        when (logtest mask (mode g))
-          collect key))
+     for key in '(:NULL :BOLD :FAINT :ITALIC :UNDERLINE :BLINK
+                  :REVERSE :INVISIBLE :STRUCK :WRAP :WIDE :WDUMMY)
+     when (logtest mask (mode g))
+     collect key))
 
 (deftype line () '(vector glyph *))
 
@@ -238,21 +238,21 @@ to DEFAULt if not already set"
   ;; -- maybe just use REPLACE and fill the gap with new GLYPHs?
   (if (<= start1 start2)
       (loop for i from start1 below end1
-            for j from start2 below end2
-            for d = (aref line i)
-            for s = (aref line j)
-            do (setf (c d) (c s)
-                     (mode d) (mode s)
-                     (fg d) (fg s)
-                     (bg d) (bg s)))
+         for j from start2 below end2
+         for d = (aref line i)
+         for s = (aref line j)
+         do (setf (c d) (c s)
+                  (mode d) (mode s)
+                  (fg d) (fg s)
+                  (bg d) (bg s)))
       (loop for i from (1- end1) downto start1
-            for j from (1- end2) downto start2
-            for d = (aref line i)
-            for s = (aref line j)
-            do (setf (c d) (c s)
-                     (mode d) (mode s)
-                     (fg d) (fg s)
-                     (bg d) (bg s)))))
+         for j from (1- end2) downto start2
+         for d = (aref line i)
+         for s = (aref line j)
+         do (setf (c d) (c s)
+                  (mode d) (mode s)
+                  (fg d) (fg s)
+                  (bg d) (bg s)))))
 
 (defclass tcursor ()
   ((attributes :accessor attributes :initform (make-instance 'glyph))
@@ -318,20 +318,20 @@ to DEFAULt if not already set"
               :element-type '(vector glyph *)
               :initial-contents
               (loop repeat rows
-                    collect (coerce
-                             (loop repeat columns
-                                   collect (make-instance 'glyph))
-                             '(vector glyph)))))
+                 collect (coerce
+                          (loop repeat columns
+                             collect (make-instance 'glyph))
+                          '(vector glyph)))))
 
 (declaim (inline glyph-at))
 (defun glyph-at (screen y x)
   (aref (aref screen y) x))
 (defun map-screen (screen function)
   (loop for line across screen
-        for y from 0
-        do (loop for glyph across line
-                 for x from 0
-                 do (funcall function glyph y x))))
+     for y from 0
+     do (loop for glyph across line
+           for x from 0
+           do (funcall function glyph y x))))
 
 (defclass term ()
   ((rows :reader rows :initarg :rows :initform 25)
@@ -365,10 +365,11 @@ to DEFAULt if not already set"
    (saved-cursors :reader saved-cursors
                   :initform (make-array 2 :initial-contents
                                         (loop repeat 2
-                                              collect (make-instance 'tcursor))))
+                                           collect (make-instance 'tcursor))))
    (allow-alt-screen :accessor allow-alt-screen :initform t)
    (csi-escape :accessor csi-escape :initform (make-instance 'csi-escape))
-   (str-escape :accessor str-escape :initform (make-instance 'str-escape))))
+   (str-escape :accessor str-escape :initform (make-instance 'str-escape))
+   (user-object :accessor user-object :initform nil)))
 
 (defmethod initialize-instance :after ((term term) &key)
   (setf (slot-value term 'screen)
@@ -400,7 +401,7 @@ to DEFAULt if not already set"
       (return-from term-line-length i))
     (loop while (and (plusp i)
                      (eql #\space (c (glyph-at screen y (1- i)))))
-          do (decf i))
+       do (decf i))
     i))
 
 ;;;; todo: mouse/selection stuff
@@ -439,21 +440,21 @@ child process"
 
 (defun tattrset (attr &key (term *term*))
   (loop for line across (screen term)
-          thereis (loop for glyph across line
-                          thereis (logtest attr (mode glyph)))))
+     thereis (loop for glyph across line
+                thereis (logtest attr (mode glyph)))))
 
 (defun tsetdirt (top bottom &key (term *term*))
   (loop for i from (limit top 0 (1- (rows term)))
-          below (limit bottom 0 (1- (rows term)))
-        do (setf (aref (dirty term) i) 1)))
+     below (limit bottom 0 (1- (rows term)))
+     do (setf (aref (dirty term) i) 1)))
 
 (defun tsetdirtattr (attr &key (term *term*))
   (loop for line across (screen term)
-        for i from 0
-        do (loop for glyph across line
-                 when (logtest attr (mode glyph))
-                   do (tsetdirt i i :term term)
-                   and return nil)))
+     for i from 0
+     do (loop for glyph across line
+           when (logtest attr (mode glyph))
+           do (tsetdirt i i :term term)
+           and return nil)))
 
 (defun tfulldirt (&key (term *term*))
   (tsetdirt 0 (1- (rows term)) :term term))
@@ -478,17 +479,17 @@ child process"
           (state c) 0))
   (fill (tabs term) 0)
   (loop for i from *tab-spaces* below (columns term) by *tab-spaces*
-        do (setf (aref (tabs term) i) 1))
+     do (setf (aref (tabs term) i) 1))
   (setf (top term) 0
         (bottom term) (1- (rows term))
         (mode term) +mode-wrap+
         (charset term) 0)
   (fill (translation-table term) :cs-usa)
   (loop repeat 2
-        do (tmoveto 0 0 :term term)
-           (tcursor :cursor-save :term term)
-           (tclearregion 0 0 (1- (columns term)) (1- (rows term)) :term term)
-           (tswapscreen :term term)))
+     do (tmoveto 0 0 :term term)
+       (tcursor :cursor-save :term term)
+       (tclearregion 0 0 (1- (columns term)) (1- (rows term)) :term term)
+       (tswapscreen :term term)))
 
 (defun tswapscreen (&key (term *term*))
   (rotatef (slot-value term 'screen) (slot-value term 'alternate-screen))
@@ -501,8 +502,8 @@ child process"
     (tsetdirt orig bottom :term term)
     (tclearregion 0 (1+ (- bottom n)) (1- (columns term)) bottom :term term)
     (loop for i from bottom downto (+ orig n)
-          do (rotatef (aref screen i)
-                      (aref screen (- i n))))
+       do (rotatef (aref screen i)
+                   (aref screen (- i n))))
     #++(selscroll orig n) ;; todo
     ))
 
@@ -513,8 +514,8 @@ child process"
     (tclearregion 0 orig (1- (columns term)) (1- (+ orig n)) :term term)
     (tsetdirt (+ orig n) bottom :term term)
     (loop for i from orig to (- bottom n)
-          do (rotatef (aref screen i)
-                      (aref screen (+ i n))))
+       do (rotatef (aref screen i)
+                   (aref screen (+ i n))))
     #++(selscroll orig (- n)) ;; todo
     ))
 
@@ -543,27 +544,27 @@ child process"
         (setf (priv csi) 1)
         (incf p))
       (loop while (< p (fill-pointer (buffer csi)))
-            do (multiple-value-bind (v np)
-                   (parse-integer (buffer csi) :start p :radix 10
-                                               :junk-allowed t)
-                 (vector-push-extend (or v 0)
-                                     (arguments csi))
-                 (setf p np)
-                 (when (or (char/= (*p) #\;)
-                           ;; possibly should ERROR with restarts
-                           ;; instead of just giving up?
-                           (> (length (arguments csi))
-                              +esc-max-args+))
-                   (loop-finish))
-                 (incf p)))
+         do (multiple-value-bind (v np)
+                (parse-integer (buffer csi) :start p :radix 10
+                               :junk-allowed t)
+              (vector-push-extend (or v 0)
+                                  (arguments csi))
+              (setf p np)
+              (when (or (char/= (*p) #\;)
+                        ;; possibly should ERROR with restarts
+                        ;; instead of just giving up?
+                        (> (length (arguments csi))
+                           +esc-max-args+))
+                (loop-finish))
+              (incf p)))
       (setf (mode csi) (*p)))))
 
 
 ;;; for absolute user moves, when decom is set
 (defun tmoveato (x y &key (term *term*))
   #++(format *debug-io* "moveato ~s,~s -> ~s ~s~%"
-          (x (cursor term)) (y (cursor term))
-          x y)
+             (x (cursor term)) (y (cursor term))
+             x y)
   (tmoveto x (+ y (if (logtest (state (cursor term)) +cursor-origin+)
                       (top term)
                       0))
@@ -571,8 +572,8 @@ child process"
 
 (defun tmoveto (x y &key (term *term*))
   #++(format *debug-io* "moveto ~s,~s -> ~s ~s~%"
-          (x (cursor term)) (y (cursor term))
-          x y)
+             (x (cursor term)) (y (cursor term))
+             x y)
   (let ((miny 0)
         (maxy (1- (rows term)))
         (c (cursor term)))
@@ -625,7 +626,7 @@ child process"
           (fg g) (fg attr)
           (bg g) (bg attr))
     #++(format t "~a / ~a)~%" (c g)
-            (c (aref (aref (screen *term*) y) x)))))
+               (c (aref (aref (screen *term*) y) x)))))
 
 
 (defun tclearregion (x1 y1 x2 y2 &key (term *term*))
@@ -638,15 +639,15 @@ child process"
         y1 (limit y1 0 (1- (rows term)))
         y2 (limit y2 0 (1- (rows term))))
   (loop for y from y1 to y2
-        do (setf (aref (dirty term) y) 1)
-           (loop for x from x1 to x2
-                 for g = (glyph-at (screen term) y x)
-                 do #++(when (selected x y)
-                         (selclear nil))
-                 (setf (fg g) (fg (attributes (cursor term)))
-                       (bg g) (bg (attributes (cursor term)))
-                       (mode g) 0
-                       (c g) #\space))))
+     do (setf (aref (dirty term) y) 1)
+       (loop for x from x1 to x2
+          for g = (glyph-at (screen term) y x)
+          do #++(when (selected x y)
+                  (selclear nil))
+            (setf (fg g) (fg (attributes (cursor term)))
+                  (bg g) (bg (attributes (cursor term)))
+                  (mode g) 0
+                  (c g) #\space))))
 
 (defun tdeletechar (n &key (term *term*))
   (limitf n 0 (- (columns term) (x (cursor term))))
@@ -707,78 +708,78 @@ child process"
 
 (defun tsetattr (attributes &key (term *term*))
   (loop with attr = (attributes (cursor term))
-        ;; can't use from 1 to x because we skip more than 1 sometimes
-        for i = 0 then (1+ i)
-        while (< i (length attributes))
-        do (flet ((on (&rest a)
-                    (setf (mode attr) (apply #'logior (mode attr) a)))
-                  (off (&rest a)
-                    (setf (mode attr) (logandc2 (mode attr)
-                                                (apply #'logior a)))))
-             (case (aref attributes i)
-                      (0
-                       (off +ATTR-BOLD+
-                            +ATTR-FAINT+
-                            +ATTR-ITALIC+
-                            +ATTR-UNDERLINE+
-                            +ATTR-BLINK+
-                            +ATTR-REVERSE+
-                            +ATTR-INVISIBLE+
-                            +ATTR-STRUCK+)
-                       (setf (fg attr) *default-foreground*
-                             (bg attr) *default-background*))
-                      (1 (on +attr-bold+))
-                      (2 (on +attr-faint+))
-                      (3 (on +attr-italic+))
-                      (4 (on +attr-underline+))
-                      (5 (on +attr-blink+)) ;; slow blink
-                      (6 (on +attr-blink+)) ;; rapid blink
-                      (7 (on +attr-reverse+))
-                      (8 (on +attr-invisible+))
-                      (9 (on +attr-struck+))
-                      ;; 10 = primary font
-                      ;; 11-19 = alternate fonts
-                      ;; 20 = fraktur font
-                      (21 (off +attr-bold+)) ;; bold off or underline double?
-                      (22 (off +attr-bold+ +attr-faint+))
-                      (23 (off +attr-italic+))
-                      (24 (off +attr-underline+))
-                      (25 (off +attr-blink+))
-                      ;; 26 reserved
-                      (27 (off +attr-reverse+))
-                      (28 (off +attr-invisible+))
-                      (29 (off +attr-struck+))
-                      ;; 30-37 below
-                      (38 (multiple-value-bind (index next-i)
-                              (tdefcolor attributes i)
-                            (setf (fg attr) index
-                                  i next-i)))
-                      (39 (setf (fg attr) *default-foreground*))
-                      ;; 40-47 below
-                      (48 (multiple-value-bind (index next-i)
-                              (tdefcolor attributes i)
-                            (setf (bg attr) index
-                                  i next-i)))
-                      (49 (setf (bg attr) *default-background*))
-                      ;; 50 reserved
-                      ;; 51 framed
-                      ;; 52 encircled
-                      ;; 53 overline
-                      ;; 54 not framed or encircled
-                      ;; 55 not overlined
-                      ;; 56-59 reserved
-                      ;; 60-65 ideogram underline/overline/stress/etc
-                      (t
-                       (let ((a (aref attributes i)))
-                        (cond
-                          ((<= 30 a 37) ;; text color
-                           (setf (fg attr) (- a 30)))
-                          ((<= 40 a 47) ;; bg color
-                           (setf (bg attr) (- a 40)))
-                          ((<= 90 a 97) ;; text color high intensity
-                           (setf (fg attr) (+ 8 (- a 90))))
-                          ((<= 100 a 107) ;; bg color high intensity
-                           (setf (bg attr) (+ 8 (- a 100)))))))))))
+     ;; can't use from 1 to x because we skip more than 1 sometimes
+     for i = 0 then (1+ i)
+     while (< i (length attributes))
+     do (flet ((on (&rest a)
+                 (setf (mode attr) (apply #'logior (mode attr) a)))
+               (off (&rest a)
+                 (setf (mode attr) (logandc2 (mode attr)
+                                             (apply #'logior a)))))
+          (case (aref attributes i)
+            (0
+             (off +ATTR-BOLD+
+                  +ATTR-FAINT+
+                  +ATTR-ITALIC+
+                  +ATTR-UNDERLINE+
+                  +ATTR-BLINK+
+                  +ATTR-REVERSE+
+                  +ATTR-INVISIBLE+
+                  +ATTR-STRUCK+)
+             (setf (fg attr) *default-foreground*
+                   (bg attr) *default-background*))
+            (1 (on +attr-bold+))
+            (2 (on +attr-faint+))
+            (3 (on +attr-italic+))
+            (4 (on +attr-underline+))
+            (5 (on +attr-blink+)) ;; slow blink
+            (6 (on +attr-blink+)) ;; rapid blink
+            (7 (on +attr-reverse+))
+            (8 (on +attr-invisible+))
+            (9 (on +attr-struck+))
+            ;; 10 = primary font
+            ;; 11-19 = alternate fonts
+            ;; 20 = fraktur font
+            (21 (off +attr-bold+)) ;; bold off or underline double?
+            (22 (off +attr-bold+ +attr-faint+))
+            (23 (off +attr-italic+))
+            (24 (off +attr-underline+))
+            (25 (off +attr-blink+))
+            ;; 26 reserved
+            (27 (off +attr-reverse+))
+            (28 (off +attr-invisible+))
+            (29 (off +attr-struck+))
+            ;; 30-37 below
+            (38 (multiple-value-bind (index next-i)
+                    (tdefcolor attributes i)
+                  (setf (fg attr) index
+                        i next-i)))
+            (39 (setf (fg attr) *default-foreground*))
+            ;; 40-47 below
+            (48 (multiple-value-bind (index next-i)
+                    (tdefcolor attributes i)
+                  (setf (bg attr) index
+                        i next-i)))
+            (49 (setf (bg attr) *default-background*))
+            ;; 50 reserved
+            ;; 51 framed
+            ;; 52 encircled
+            ;; 53 overline
+            ;; 54 not framed or encircled
+            ;; 55 not overlined
+            ;; 56-59 reserved
+            ;; 60-65 ideogram underline/overline/stress/etc
+            (t
+             (let ((a (aref attributes i)))
+               (cond
+                 ((<= 30 a 37) ;; text color
+                  (setf (fg attr) (- a 30)))
+                 ((<= 40 a 47) ;; bg color
+                  (setf (bg attr) (- a 40)))
+                 ((<= 90 a 97) ;; text color high intensity
+                  (setf (fg attr) (+ 8 (- a 90))))
+                 ((<= 100 a 107) ;; bg color high intensity
+                  (setf (bg attr) (+ 8 (- a 100)))))))))))
 
 (defun tsetscroll (top bottom &key (term *term*))
   (limitf top 0 (1- (rows term)))
@@ -790,104 +791,104 @@ child process"
 
 (defun tsetmode (priv set args &key (term *term*))
   (setf set (and set (not (zerop set))))
-;  (break "tsetmode ~s ~s ~s ~s" priv set args term)
+                                        ;  (break "tsetmode ~s ~s ~s ~s" priv set args term)
   (loop for arg across args
-        if priv
-          do (case arg
-               (1 ;; DECCKM -- Cursor key
-                (modbit (mode term) set +mode-appcursor+))
-               (5 ;; DECSCNM -- Reverse video
-                (let ((old (mode term)))
-                  (modbit (mode term) set +mode-reverse+)
-                  (unless (= old (mode term))
-                    ;; not sure if this needs timeout?
-                    ;; probably should be handled differently if it does
-                    #++(redraw *redraw-timeout* :term term))))
-               (6 ;; DECOM -- Origin
-                (modbit (state (cursor term)) set +cursor-origin+)
-                (tmoveato 0 0 :term term))
-               (7 ;; DECAWM -- Auto wrap
-                (modbit (mode term) set +mode-wrap+))
-               ((0 ;; Error (IGNORED)
-                 2 ;; DECANM -- ANSI/VT52 (IGNORED)
-                 3 ;; DECCOLM -- Column  (IGNORED)
-                 4 ;; DECSCLM -- Scroll (IGNORED)
-                 8 ;; DECARM -- Auto repeat (IGNORED)
-                 18 ;; DECPFF -- Printer feed (IGNORED)
-                 19 ;; DECPEX -- Printer extent (IGNORED)
-                 42 ;; DECNRCM -- National characters (IGNORED)
-                 12)) ;; att610 -- Start blinking cursor (IGNORED)
-               (25 ;; DECTCEM -- Text Cursor Enable Mode
-                (modbit (mode term) (not set) +mode-hide+))
-               (9 ;; X10 mouse compatibility mode
-                #++ (xsetpointermotion nil :term term)
-                (modbit (mode term) nil +mode-mouse+)
-                (modbit (mode term) set +mode-mousex10+))
-               (1000 ;;1000: report button press
-                #++(xsetpointermotion nil :term term)
-                (modbit (mode term) nil +mode-mouse+)
-                (modbit (mode term) set +mode-mousebtn+))
-               (1002 ;; 1002: report motion on button press
-                #++(xsetpointermotion nil :term term)
-                (modbit (mode term) nil +mode-mouse+)
-                (modbit (mode term) set +mode-mousemotion+))
-               (1003 ;; 1003: enable all mouse motions
-                #++(xsetpointermotion set :term term)
-                (modbit (mode term) nil +mode-mouse+)
-                (modbit (mode term) set +mode-mousemany+))
-               (1004 ;; 1004: send focus events to tty
-                (modbit (mode term) set +mode-focus+))
-               (1006 ;; 1006: extended reporting mode
-                (modbit (mode term) set +mode-mousesgr+))
-               (1034
-                (modbit (mode term) set +mode-8bit+))
-               ((1049 ;; swap screen & set/restore cursor as xterm
-                 47 ;; swap screen
-                 1047
-                 1048)
-                (when (and (eql arg 1049)
-                           (not (allow-alt-screen term)))
-                  (tcursor (if set :cursor-save :cursor-load)
-                           :term term))
-                (when (member arg '(1049 47 1047))
-                  (unless (allow-alt-screen term)
-                    (let ((alt (logtest (mode term) +mode-altscreen+)))
-                      (when alt
-                        (tclearregion 0 0 (1- (columns term)) (1- (rows term))
-                                      :term term))
-                      (unless (eql set alt)
-                        (tswapscreen :term term)))))
-                (when (member arg '(1049 1048))
-                  (tcursor (if set :cursor-save :cursor-load)
-                           :term term)))
-               (2004 ;; 2004: bracketed paste mode
-                (modbit (mode term) set +mode-brcktpaste+))
-               ;; Not implemented mouse modes. See comments there.
-               ((;; mouse highlight mode; can hang the terminal by
-                 ;; design when implemented.
-                 1001
-                 ;; UTF-8 mouse mode; will confuse applications not
-                 ;; supporting UTF-8 and luit.
-		 1005
-                 ;; urxvt mangled mouse mode; incompatible and can be
-                 ;; mistaken for other control codes.
-		 1015))
-               (t
-                (warn "unknown private set/reset mode ~a" arg)))
-             else do
-               (case arg
-                 (0 ;; Error (IGNORED)
-                  )
-                 (2 ;; KAM -- keyboard action
-                  (modbit (mode term) set +mode-kbdlock+))
-                 (4 ;;IRM -- Insertion-replacement
-                  (modbit (mode term) set +mode-insert+))
-                 (12 ;; SRM -- Send/Receive
-                  (modbit (mode term) (not set) +mode-echo+))
-                 (20 ;;LNM -- Linefeed/new line
-                  (modbit (mode term) set +mode-crlf+))
-                 (t
-                  (warn "erresc: unknown set/reset mode ~a" arg)))))
+     if priv
+     do (case arg
+          (1 ;; DECCKM -- Cursor key
+           (modbit (mode term) set +mode-appcursor+))
+          (5 ;; DECSCNM -- Reverse video
+           (let ((old (mode term)))
+             (modbit (mode term) set +mode-reverse+)
+             (unless (= old (mode term))
+               ;; not sure if this needs timeout?
+               ;; probably should be handled differently if it does
+               #++(redraw *redraw-timeout* :term term))))
+          (6 ;; DECOM -- Origin
+           (modbit (state (cursor term)) set +cursor-origin+)
+           (tmoveato 0 0 :term term))
+          (7 ;; DECAWM -- Auto wrap
+           (modbit (mode term) set +mode-wrap+))
+          ((0 ;; Error (IGNORED)
+            2 ;; DECANM -- ANSI/VT52 (IGNORED)
+            3 ;; DECCOLM -- Column  (IGNORED)
+            4 ;; DECSCLM -- Scroll (IGNORED)
+            8 ;; DECARM -- Auto repeat (IGNORED)
+            18 ;; DECPFF -- Printer feed (IGNORED)
+            19 ;; DECPEX -- Printer extent (IGNORED)
+            42 ;; DECNRCM -- National characters (IGNORED)
+            12)) ;; att610 -- Start blinking cursor (IGNORED)
+          (25 ;; DECTCEM -- Text Cursor Enable Mode
+           (modbit (mode term) (not set) +mode-hide+))
+          (9 ;; X10 mouse compatibility mode
+           #++ (xsetpointermotion nil :term term)
+           (modbit (mode term) nil +mode-mouse+)
+           (modbit (mode term) set +mode-mousex10+))
+          (1000 ;;1000: report button press
+           #++(xsetpointermotion nil :term term)
+           (modbit (mode term) nil +mode-mouse+)
+           (modbit (mode term) set +mode-mousebtn+))
+          (1002 ;; 1002: report motion on button press
+           #++(xsetpointermotion nil :term term)
+           (modbit (mode term) nil +mode-mouse+)
+           (modbit (mode term) set +mode-mousemotion+))
+          (1003 ;; 1003: enable all mouse motions
+           #++(xsetpointermotion set :term term)
+           (modbit (mode term) nil +mode-mouse+)
+           (modbit (mode term) set +mode-mousemany+))
+          (1004 ;; 1004: send focus events to tty
+           (modbit (mode term) set +mode-focus+))
+          (1006 ;; 1006: extended reporting mode
+           (modbit (mode term) set +mode-mousesgr+))
+          (1034
+           (modbit (mode term) set +mode-8bit+))
+          ((1049 ;; swap screen & set/restore cursor as xterm
+            47 ;; swap screen
+            1047
+            1048)
+           (when (and (eql arg 1049)
+                      (not (allow-alt-screen term)))
+             (tcursor (if set :cursor-save :cursor-load)
+                      :term term))
+           (when (member arg '(1049 47 1047))
+             (unless (allow-alt-screen term)
+               (let ((alt (logtest (mode term) +mode-altscreen+)))
+                 (when alt
+                   (tclearregion 0 0 (1- (columns term)) (1- (rows term))
+                                 :term term))
+                 (unless (eql set alt)
+                   (tswapscreen :term term)))))
+           (when (member arg '(1049 1048))
+             (tcursor (if set :cursor-save :cursor-load)
+                      :term term)))
+          (2004 ;; 2004: bracketed paste mode
+           (modbit (mode term) set +mode-brcktpaste+))
+          ;; Not implemented mouse modes. See comments there.
+          ((;; mouse highlight mode; can hang the terminal by
+            ;; design when implemented.
+            1001
+            ;; UTF-8 mouse mode; will confuse applications not
+            ;; supporting UTF-8 and luit.
+            1005
+            ;; urxvt mangled mouse mode; incompatible and can be
+            ;; mistaken for other control codes.
+            1015))
+          (t
+           (warn "unknown private set/reset mode ~a" arg)))
+     else do
+       (case arg
+         (0 ;; Error (IGNORED)
+          )
+         (2 ;; KAM -- keyboard action
+          (modbit (mode term) set +mode-kbdlock+))
+         (4 ;;IRM -- Insertion-replacement
+          (modbit (mode term) set +mode-insert+))
+         (12 ;; SRM -- Send/Receive
+          (modbit (mode term) (not set) +mode-echo+))
+         (20 ;;LNM -- Linefeed/new line
+          (modbit (mode term) set +mode-crlf+))
+         (t
+          (warn "erresc: unknown set/reset mode ~a" arg)))))
 
 (defun csihandle (csi &key (term *term*))
   (flet ((unknown ()
@@ -896,197 +897,197 @@ child process"
            ;; die("");
            ))
     (case (mode csi)
-             (#\@ ;; ICH -- Insert <n> blank char
-              (ensure-aref (arguments csi) 0 1))
-             (#\A ;; CUU -- Cursor <n> Up
-              (ensure-aref (arguments csi) 0 1)
-              (tmoveto (x (cursor term))
-                       (- (y (cursor term)) (aref (arguments csi) 0))
-                       :term term))
-             ((#\B ;; CUD -- Cursor <n> Down
-               #\e) ;; VPR --Cursor <n> Down
-              (ensure-aref (arguments csi) 0 1)
-              (tmoveto (x (cursor term))
-                       (+ (y (cursor term))
-                          (aref (arguments csi) 0))
-                       :term term))
-             (#\i ;; MC -- Media Copy
-              ;; not sure if it should error or default here?
-              (ensure-aref (arguments csi) 0 0)
-              (case (aref (arguments csi) 0)
-                (0 (tdump :term term))
-                (1 (tdumpline (y (cursor term)) :term term))
-                (2 #++(tdumpsel :term term))
-                (4 (modbit (mode term) nil +mode-print+))
-                (5 (modbit (mode term) t +mode-print+))))
-             (#\c ;; DA -- Device Attributes
-              (when (zerop (aref (arguments csi) 0))
-                (tty-write *vt-iden* :term term)))
-             ((#\C ;; CUF -- Cursor <n> Forward
-               #\a) ;; HPR -- Cursor <n> Forward
-              (ensure-aref (arguments csi) 0 1)
-              (tmoveto (+ (x (cursor term))
-                          (aref (arguments csi) 0))
-                       (y (cursor term))
-                       :term term))
-             (#\D ;; CUB -- Cursor <n> Backward
-              (ensure-aref (arguments csi) 0 1)
-              (tmoveto (- (x (cursor term))
-                          (aref (arguments csi) 0))
-                       (y (cursor term))
-                       :term term))
-             (#\E ;; CNL -- Cursor <n> Down and first col
-              (ensure-aref (arguments csi) 0 1)
-              (tmoveto 0 (+ (y (cursor term))
-                            (aref (arguments csi) 0))
-                       :term term))
-             (#\F ;; CPL -- Cursor <n> Up and first col
-              (ensure-aref (arguments csi) 0 1)
-              (tmoveto 0 (- (y (cursor term))
-                            (aref (arguments csi) 0))
-                       :term term))
-             (#\g ;; TBC -- Tabulation clear
-              ;; not sure if it should error or default here?
-              (ensure-aref (arguments csi) 0 0)
-              (case (aref (arguments csi) 0)
-                (0 ;; clear current tab stop
-                 (setf (aref (tabs term) (x (cursor term))) 0))
-                (3 ;; clear all the tabs
-                 (fill (tabs term) 0))
-                (t
-                 (unknown)))
-              )
+      (#\@ ;; ICH -- Insert <n> blank char
+       (ensure-aref (arguments csi) 0 1))
+      (#\A ;; CUU -- Cursor <n> Up
+       (ensure-aref (arguments csi) 0 1)
+       (tmoveto (x (cursor term))
+                (- (y (cursor term)) (aref (arguments csi) 0))
+                :term term))
+      ((#\B ;; CUD -- Cursor <n> Down
+        #\e) ;; VPR --Cursor <n> Down
+       (ensure-aref (arguments csi) 0 1)
+       (tmoveto (x (cursor term))
+                (+ (y (cursor term))
+                   (aref (arguments csi) 0))
+                :term term))
+      (#\i ;; MC -- Media Copy
+       ;; not sure if it should error or default here?
+       (ensure-aref (arguments csi) 0 0)
+       (case (aref (arguments csi) 0)
+         (0 (tdump :term term))
+         (1 (tdumpline (y (cursor term)) :term term))
+         (2 #++(tdumpsel :term term))
+         (4 (modbit (mode term) nil +mode-print+))
+         (5 (modbit (mode term) t +mode-print+))))
+      (#\c ;; DA -- Device Attributes
+       (when (zerop (aref (arguments csi) 0))
+         (tty-write *vt-iden* :term term)))
+      ((#\C ;; CUF -- Cursor <n> Forward
+        #\a) ;; HPR -- Cursor <n> Forward
+       (ensure-aref (arguments csi) 0 1)
+       (tmoveto (+ (x (cursor term))
+                   (aref (arguments csi) 0))
+                (y (cursor term))
+                :term term))
+      (#\D ;; CUB -- Cursor <n> Backward
+       (ensure-aref (arguments csi) 0 1)
+       (tmoveto (- (x (cursor term))
+                   (aref (arguments csi) 0))
+                (y (cursor term))
+                :term term))
+      (#\E ;; CNL -- Cursor <n> Down and first col
+       (ensure-aref (arguments csi) 0 1)
+       (tmoveto 0 (+ (y (cursor term))
+                     (aref (arguments csi) 0))
+                :term term))
+      (#\F ;; CPL -- Cursor <n> Up and first col
+       (ensure-aref (arguments csi) 0 1)
+       (tmoveto 0 (- (y (cursor term))
+                     (aref (arguments csi) 0))
+                :term term))
+      (#\g ;; TBC -- Tabulation clear
+       ;; not sure if it should error or default here?
+       (ensure-aref (arguments csi) 0 0)
+       (case (aref (arguments csi) 0)
+         (0 ;; clear current tab stop
+          (setf (aref (tabs term) (x (cursor term))) 0))
+         (3 ;; clear all the tabs
+          (fill (tabs term) 0))
+         (t
+          (unknown)))
+       )
 
-             ((#\G ;; CHA -- Move to <col>
-               #\`);; HPA
-              (ensure-aref (arguments csi) 0 1)
-              (tmoveto (1- (aref (arguments csi) 0))
-                       (y (cursor term))
-                               :term term))
-             ((#\H ;; CUP -- Move to <row> <col>
-               #\f);; HVP
-              (ensure-aref (arguments csi) 0 1)
-              (ensure-aref (arguments csi) 1 1)
-              (tmoveato (1- (aref (arguments csi) 1))
-                        (1- (aref (arguments csi) 0))))
-             (#\I ;; CHT -- Cursor Forward Tabulation <n> tab stops
-              (ensure-aref (arguments csi) 0 1)
-              (tputtab (aref (arguments csi) 0) :term term))
-             (#\J ;; ED -- Clear screen
-              #++(selclear nil :term term)
-              ;; not sure if it should error or default here?
-              (ensure-aref (arguments csi) 0 0)
-              (case (aref (arguments csi) 0)
-                (0 ;; below
-                 (tclearregion (x (cursor term)) (y (cursor term))
-                               (1- (columns term)) (y (cursor term))
-                               :term term)
-                 (when (< (y (cursor term)) (1- (rows term)))
-                   (tclearregion 0 (1+ (y (cursor term)))
-                                 (1- (columns term)) (1- (rows term))
-                               :term term)))
-                (1 ;; above
-                 (when (> (y (cursor term)) 1)
-                   (tclearregion 0 0 (1- (columns term)) (1- (y (cursor term)))
-                               :term term))
-                 (tclearregion 0 (y (cursor term))
-                               (x (cursor term)) (y (cursor term))
-                               :term term))
-                (2 ;; all
-                 (tclearregion 0 0 (1- (columns term)) (1- (rows term))
-                               :term term))
-                (t (unknown))))
-             (#\K ;; EL -- Clear line
-              ;; not sure if it should error or default here?
-              (ensure-aref (arguments csi) 0 0)
-              (case (aref (arguments csi) 0)
-                (0 ;; right
-                 (tclearregion (x (cursor term)) (y (cursor term))
-                               (1- (columns term)) (y (cursor term))
-                               :term term))
-                (1 ;; left
-                 (tclearregion 0 (y (cursor term))
-                               (x (cursor term)) (y (cursor term))
-                               :term term))
-                (2 ;; all
-                 (tclearregion 0 (y (cursor term))
-                               (1- (columns term)) (y (cursor term))
-                               :term term))
-                (t (unknown))))
-             (#\S ;; SU -- Scroll <n> line up
-              (ensure-aref (arguments csi) 0 1)
-              (tscrollup (top term) (aref (arguments csi) 0)
-                         :term term))
-             (#\T ;; SD -- Scroll <n> line down
-              (ensure-aref (arguments csi) 0 1)
-              (tscrolldown (top term) (aref (arguments csi) 0)
-                           :term term))
-             (#\L ;; IL -- Insert <n> blank lin
-              (ensure-aref (arguments csi) 0 1)
-              (tinsertblankline (aref (arguments csi) 0) :term term))
-             (#\l ;; RM -- Reset Mode
-              (tsetmode (priv csi) 0 (arguments csi) :term term))
-             (#\M ;; DL -- Delete <n> lines
-              (ensure-aref (arguments csi) 0 1)
-              (tdeleteline (aref (arguments csi) 0) :term term))
-             (#\X ;; ECH -- Erase <n> char
-              (ensure-aref (arguments csi) 0 1)
-              (tclearregion (x (cursor term)) (y (cursor term))
-                            (+ (x (cursor term)) (aref (arguments csi) 0) -1)
-                            (y (cursor term))
-                            :term term))
-             (#\P ;; DCH -- Delete <n> char
-              (ensure-aref (arguments csi) 0 1)
-              (tdeletechar (aref (arguments csi) 0) :term term))
-             (#\Z ;; CBT -- Cursor Backward Tabulation <n> tab stops
-              (ensure-aref (arguments csi) 0 1)
-              (tputtab (- (aref (arguments csi) 0)) :term term))
-             (#\d ;; VPA -- Move to <row>
-              (ensure-aref (arguments csi) 0 1)
-              (tmoveto (x (cursor term)) (1- (aref (arguments csi) 0))
-                       :term term))
-             (#\h ;; SM -- Set terminal mode
-              (tsetmode (priv csi) 1 (arguments csi) :term term))
-             (#\m ;; SGR -- Terminal attribute (color)
-              (tsetattr (arguments csi) :term term))
-             (#\n ;; DSR – Device Status Report (cursor position)
-              ;; fixme: check size instead of defaulting to zero?
-              (ensure-aref (arguments csi) 0 0)
-              (when (zerop (aref (arguments csi) 0))
-                (tty-write (format nil "~c[~d,~dR" (code-char #o33)
-                                   (1+ (y (cursor term)))
-                                   (1+ (x (cursor term))))
-                           :term term)))
-             (#\r ;; DECSTBM -- Set Scrolling Region
-              (if (priv csi)
-                  (unknown)
-                  (progn
-                    (ensure-aref (arguments csi) 0 1)
-                    (ensure-aref (arguments csi) 1 (rows term))
-                    (tsetscroll (1- (aref (arguments csi) 0))
-                                (1- (aref (arguments csi) 1))
-                                :term term)
-                    (tmoveto 0 0 :term term))))
-             (#\s ;; DECSC -- Save cursor position (ANSI.SYS)
-              (tcursor :cursor-save :term term))
-             (#\u ;; DECRC -- Restore cursor position (ANSI.SYS)
-              (tcursor :cursor-load :term term))
-             (t (unknown)))))
+      ((#\G ;; CHA -- Move to <col>
+        #\`);; HPA
+       (ensure-aref (arguments csi) 0 1)
+       (tmoveto (1- (aref (arguments csi) 0))
+                (y (cursor term))
+                :term term))
+      ((#\H ;; CUP -- Move to <row> <col>
+        #\f);; HVP
+       (ensure-aref (arguments csi) 0 1)
+       (ensure-aref (arguments csi) 1 1)
+       (tmoveato (1- (aref (arguments csi) 1))
+                 (1- (aref (arguments csi) 0))))
+      (#\I ;; CHT -- Cursor Forward Tabulation <n> tab stops
+       (ensure-aref (arguments csi) 0 1)
+       (tputtab (aref (arguments csi) 0) :term term))
+      (#\J ;; ED -- Clear screen
+       #++(selclear nil :term term)
+       ;; not sure if it should error or default here?
+       (ensure-aref (arguments csi) 0 0)
+       (case (aref (arguments csi) 0)
+         (0 ;; below
+          (tclearregion (x (cursor term)) (y (cursor term))
+                        (1- (columns term)) (y (cursor term))
+                        :term term)
+          (when (< (y (cursor term)) (1- (rows term)))
+            (tclearregion 0 (1+ (y (cursor term)))
+                          (1- (columns term)) (1- (rows term))
+                          :term term)))
+         (1 ;; above
+          (when (> (y (cursor term)) 1)
+            (tclearregion 0 0 (1- (columns term)) (1- (y (cursor term)))
+                          :term term))
+          (tclearregion 0 (y (cursor term))
+                        (x (cursor term)) (y (cursor term))
+                        :term term))
+         (2 ;; all
+          (tclearregion 0 0 (1- (columns term)) (1- (rows term))
+                        :term term))
+         (t (unknown))))
+      (#\K ;; EL -- Clear line
+       ;; not sure if it should error or default here?
+       (ensure-aref (arguments csi) 0 0)
+       (case (aref (arguments csi) 0)
+         (0 ;; right
+          (tclearregion (x (cursor term)) (y (cursor term))
+                        (1- (columns term)) (y (cursor term))
+                        :term term))
+         (1 ;; left
+          (tclearregion 0 (y (cursor term))
+                        (x (cursor term)) (y (cursor term))
+                        :term term))
+         (2 ;; all
+          (tclearregion 0 (y (cursor term))
+                        (1- (columns term)) (y (cursor term))
+                        :term term))
+         (t (unknown))))
+      (#\S ;; SU -- Scroll <n> line up
+       (ensure-aref (arguments csi) 0 1)
+       (tscrollup (top term) (aref (arguments csi) 0)
+                  :term term))
+      (#\T ;; SD -- Scroll <n> line down
+       (ensure-aref (arguments csi) 0 1)
+       (tscrolldown (top term) (aref (arguments csi) 0)
+                    :term term))
+      (#\L ;; IL -- Insert <n> blank lin
+       (ensure-aref (arguments csi) 0 1)
+       (tinsertblankline (aref (arguments csi) 0) :term term))
+      (#\l ;; RM -- Reset Mode
+       (tsetmode (priv csi) 0 (arguments csi) :term term))
+      (#\M ;; DL -- Delete <n> lines
+       (ensure-aref (arguments csi) 0 1)
+       (tdeleteline (aref (arguments csi) 0) :term term))
+      (#\X ;; ECH -- Erase <n> char
+       (ensure-aref (arguments csi) 0 1)
+       (tclearregion (x (cursor term)) (y (cursor term))
+                     (+ (x (cursor term)) (aref (arguments csi) 0) -1)
+                     (y (cursor term))
+                     :term term))
+      (#\P ;; DCH -- Delete <n> char
+       (ensure-aref (arguments csi) 0 1)
+       (tdeletechar (aref (arguments csi) 0) :term term))
+      (#\Z ;; CBT -- Cursor Backward Tabulation <n> tab stops
+       (ensure-aref (arguments csi) 0 1)
+       (tputtab (- (aref (arguments csi) 0)) :term term))
+      (#\d ;; VPA -- Move to <row>
+       (ensure-aref (arguments csi) 0 1)
+       (tmoveto (x (cursor term)) (1- (aref (arguments csi) 0))
+                :term term))
+      (#\h ;; SM -- Set terminal mode
+       (tsetmode (priv csi) 1 (arguments csi) :term term))
+      (#\m ;; SGR -- Terminal attribute (color)
+       (tsetattr (arguments csi) :term term))
+      (#\n ;; DSR – Device Status Report (cursor position)
+       ;; fixme: check size instead of defaulting to zero?
+       (ensure-aref (arguments csi) 0 0)
+       (when (zerop (aref (arguments csi) 0))
+         (tty-write (format nil "~c[~d,~dR" (code-char #o33)
+                            (1+ (y (cursor term)))
+                            (1+ (x (cursor term))))
+                    :term term)))
+      (#\r ;; DECSTBM -- Set Scrolling Region
+       (if (priv csi)
+           (unknown)
+           (progn
+             (ensure-aref (arguments csi) 0 1)
+             (ensure-aref (arguments csi) 1 (rows term))
+             (tsetscroll (1- (aref (arguments csi) 0))
+                         (1- (aref (arguments csi) 1))
+                         :term term)
+             (tmoveto 0 0 :term term))))
+      (#\s ;; DECSC -- Save cursor position (ANSI.SYS)
+       (tcursor :cursor-save :term term))
+      (#\u ;; DECRC -- Restore cursor position (ANSI.SYS)
+       (tcursor :cursor-load :term term))
+      (t (unknown)))))
 
 (defun csidump (csi &key (term *term*))
   (declare (ignore term))
   (with-output-to-string (*standard-output*)
     (format t "ESC[")
     (loop for c across (buffer csi)
-          if (graphic-char-p c)
-            do (format t "~c" c)
-          else if (char= c #\newline)
-                 do (format t "\\n")
-          else if (char= c #\return)
-                 do (format t "\\r")
-          else if (char= c (code-char #x1b))
-                 do (format t "\\e")
-          else do (format t "(~2,'0x)" (char-code c)))))
+       if (graphic-char-p c)
+       do (format t "~c" c)
+       else if (char= c #\newline)
+       do (format t "\\n")
+       else if (char= c #\return)
+       do (format t "\\r")
+       else if (char= c (code-char #x1b))
+       do (format t "\\e")
+       else do (format t "(~2,'0x)" (char-code c)))))
 
 (defun csireset (csi)
   (setf (fill-pointer (buffer csi)) 0
@@ -1096,9 +1097,9 @@ child process"
 
 (defun strhandle (str &key (term *term*))
   (setf (escape term) (logandc2 (escape term)
-                             (logior +esc-str-end+ +esc-str+)))
+                                (logior +esc-str-end+ +esc-str+)))
   (loop for a in (split-sequence:split-sequence #\; (buffer str))
-        do (vector-push-extend a (arguments str)))
+     do (vector-push-extend a (arguments str)))
   #++(strparse esc)
   (let* ((args (arguments str))
          (par (if (equal (aref args 0) "")
@@ -1106,50 +1107,50 @@ child process"
                   (parse-integer (aref args 0))))
          (narg (length args)))
     (case (str-type str)
-    (#\] ;; OSC -- Operating System Command
-     (case par
-       ((0 1 2)
-        (when (> narg 1)
-          (format t "set title(~a) to ~s~%" par (aref args 1))
-          #++(xsettitle (aref args 1))))
-       ((4 ;; color set
-         104);; color reset
-        (when (or (= par 104)
-                  (>= narg 3))
-          (let ((p (when (= par 4)
-                     (aref args 2)))
-                (j (if (> narg 1)
-                       (or (parse-integer (aref args 1) :junk-allowed t) 0)
-                       -1)))
-            (declare (ignorable p j))
-            #++(if (xsetcolorname j p)
-                (warn "erresc: invalid color ~a" p)
-                ;; TODO if defaultbg color is changed, borders are
-                ;; dirty
-                (redraw 0 :term term)))))))
-    (#\k ;; old title set compatibility
-     #++ (xsettitle (aref args 0)))
-    ((#\P ;; DCS -- Device Control String
-      #\- ;; APC -- Application Program Command
-      #\^);;PM -- Privacy Message
-     ;; ignore
-     )
-    (t
-     (warn "erresc: unknown str ~a" (strdump (str-escape term)))))))
+      (#\] ;; OSC -- Operating System Command
+       (case par
+         ((0 1 2)
+          (when (> narg 1)
+            (format t "set title(~a) to ~s~%" par (aref args 1))
+            #++(xsettitle (aref args 1))))
+         ((4 ;; color set
+           104);; color reset
+          (when (or (= par 104)
+                    (>= narg 3))
+            (let ((p (when (= par 4)
+                       (aref args 2)))
+                  (j (if (> narg 1)
+                         (or (parse-integer (aref args 1) :junk-allowed t) 0)
+                         -1)))
+              (declare (ignorable p j))
+              #++(if (xsetcolorname j p)
+                     (warn "erresc: invalid color ~a" p)
+                     ;; TODO if defaultbg color is changed, borders are
+                     ;; dirty
+                     (redraw 0 :term term)))))))
+      (#\k ;; old title set compatibility
+       #++ (xsettitle (aref args 0)))
+      ((#\P ;; DCS -- Device Control String
+        #\- ;; APC -- Application Program Command
+        #\^);;PM -- Privacy Message
+       ;; ignore
+       )
+      (t
+       (warn "erresc: unknown str ~a" (strdump (str-escape term)))))))
 
 (defun strdump (str)
   (with-output-to-string (*standard-output*)
     (format t "ESC~c" (str-type str))
     (loop for c across (buffer str)
-          if (graphic-char-p c)
-            do (format t "~c" c)
-          else if (char= c #\newline)
-                 do (format t "\\n")
-          else if (char= c #\return)
-                 do (format t "\\r")
-          else if (char= c (code-char #x1b))
-                 do (format t "\\e")
-          else do (format t "(~2,'0x)" (char-code c)))
+       if (graphic-char-p c)
+       do (format t "~c" c)
+       else if (char= c #\newline)
+       do (format t "\\n")
+       else if (char= c #\return)
+       do (format t "\\r")
+       else if (char= c (code-char #x1b))
+       do (format t "\\e")
+       else do (format t "(~2,'0x)" (char-code c)))
     (format t "ESC")))
 
 (defun strreset (str)
@@ -1164,9 +1165,9 @@ child process"
   ;; todo: make output stream configurable?
   (format *standard-output* "-~a-" string)
   ;;  if(iofd != -1 && xwrite(iofd, s, len) < 0) {
-  ;;  	fprintf(stderr, "Error writing in %s:%s\n",
-  ;;  	        opt-io, strerror(errno));
-  ;;  	close(iofd);
+  ;;    fprintf(stderr, "Error writing in %s:%s\n",
+  ;;            opt-io, strerror(errno));
+  ;;    close(iofd);
   ;;    iofd = -1;
   ;;  }
   )
@@ -1203,48 +1204,48 @@ child process"
     (cond
       ((plusp n)
        (loop repeat n
-             when (and x (< x (1- (columns term))))
-               do (setf x (position 1 (tabs term) :start (1+ x)))))
+          when (and x (< x (1- (columns term))))
+          do (setf x (position 1 (tabs term) :start (1+ x)))))
       ((minusp n)
        (loop repeat (abs n)
-             when (and x (plusp x))
-               do (setf x (position 1 (tabs term) :from-end t :end x)))))
+          when (and x (plusp x))
+          do (setf x (position 1 (tabs term) :from-end t :end x)))))
     (tmoveto (or x (if (plusp n) (1- (columns term)) 0))
              (y (cursor term)) :term term)))
 
 (defun techo (string &key (term *term*))
   (let ((start 0))
     (loop for c across string
-          for cc = (char-code c)
-          while (control-p cc)
-          do (incf start)
-             (cond
-               ((logtest cc #x80)
-                (setf cc (logand #x7f))
-                (tputc #\^ :term term)
-                (tputc #\[ :term term))
-               ((not (member cc '(9 10 13))) ;; \t \n \r
-                (setf cc (logxor cc #x40))
-                (tputc #\^ :term term)))
-             (tputc (code-char cc) :term term))
+       for cc = (char-code c)
+       while (control-p cc)
+       do (incf start)
+         (cond
+           ((logtest cc #x80)
+            (setf cc (logand #x7f))
+            (tputc #\^ :term term)
+            (tputc #\[ :term term))
+           ((not (member cc '(9 10 13))) ;; \t \n \r
+            (setf cc (logxor cc #x40))
+            (tputc #\^ :term term)))
+         (tputc (code-char cc) :term term))
     (loop for i from start below (length string)
-          do (tputc (aref string i) :term term))))
+       do (tputc (aref string i) :term term))))
 
 (defun tdeftran (ascii &key (term *term*))
   (let ((p (position ascii "0B")))
     (if p
         (setf (aref (translation-table term)
-                      (icharset term))
-                (aref #(:cs-graphic0 :cs-usa) p))
+                    (icharset term))
+              (aref #(:cs-graphic0 :cs-usa) p))
         (warn "esc unhandled charset: ESC ( ~a" ascii))))
 
 (defun tdectest (c &key (term *term*))
   (when (eql c #\8)
     ;; DEC screen alignment test.
     (loop for x below (columns term)
-          do (loop for y below (rows term)
-                   do (tsetchar #\E (attributes (cursor term)) x y
-                                :term term)))))
+       do (loop for y below (rows term)
+             do (tsetchar #\E (attributes (cursor term)) x y
+                          :term term)))))
 
 (defun tstrsequence (c &key (term *term*))
   (let ((cc (char-code c)))
@@ -1258,7 +1259,7 @@ child process"
          (setf c #\^))
         (#x9d ;; OSC -- Operating System Command
          (setf c #\]))))
-        ;; not sure if it is better to reset str-escape or make a new one?
+    ;; not sure if it is better to reset str-escape or make a new one?
     (setf (str-escape term) (make-instance 'str-escape :c c))
     (modbit (escape term) t +esc-str+)))
 
@@ -1328,7 +1329,7 @@ child process"
         #x9e ;; PM -- Privacy Message
         #x9d) ;; OSC -- Operating System Command
        (tstrsequence ascii :term term)))
-      ;; only CAN, SUB, \a and C1 chars interrupt a sequence
+    ;; only CAN, SUB, \a and C1 chars interrupt a sequence
     (when (or (= cc 7)
               (= cc #o30)
               (controlc1-p cc))
@@ -1457,7 +1458,7 @@ child process"
          (modbit (escape term) t +esc-str-end+))
         ((< (length (buffer (str-escape term))) +str-buf-max-size+)
          (vector-push-extend c (buffer (str-escape term)))
-                  (return-from tputc nil))
+         (return-from tputc nil))
         (t
          ;; Here is a bug in terminals. If the user never sends some
          ;; code to stop the str or esc command, then st will stop
@@ -1513,7 +1514,7 @@ child process"
                  (< (+ width (x (cursor term)))
                     (columns term)))
         (move-glyphs line :start1 (+ width (x (cursor term)))
-                           :start2 (x (cursor term))))
+                     :start2 (x (cursor term))))
       (when (> (+ width (x (cursor term))) (columns term))
         (tnewline 1 :term term))
       (tsetchar c (attributes (cursor term))
@@ -1556,32 +1557,32 @@ child process"
 
     ;; resize each row to new width, zero-pad if needed
     (loop for i below minrow
-          do (flet ((r (s)
-                      (setf (aref s i)
-                            (adjust-array (aref s i) columns))
-                      (loop for j from mincol below columns
-                            do (setf (aref (aref s i) j)
-                                     (make-instance 'glyph)))))
-               (r (screen term))
-               (r (alternate-screen term))))
+       do (flet ((r (s)
+                   (setf (aref s i)
+                         (adjust-array (aref s i) columns))
+                   (loop for j from mincol below columns
+                      do (setf (aref (aref s i) j)
+                               (make-instance 'glyph)))))
+            (r (screen term))
+            (r (alternate-screen term))))
     ;; allocate any new rows
     (loop for i from minrow below rows
-          do (flet ((n (s)
-                      (setf (aref s i)
-                            (make-array columns
-                                        :element-type '(vector glyph *)
-                                        :initial-contents
-                                        (coerce
-                                         (loop repeat columns
-                                               collect (make-instance 'glyph))
-                                         '(vector glyph))))))
-               (n (screen term))
-               (n (alternate-screen term))))
+       do (flet ((n (s)
+                   (setf (aref s i)
+                         (make-array columns
+                                     :element-type '(vector glyph *)
+                                     :initial-contents
+                                     (coerce
+                                      (loop repeat columns
+                                         collect (make-instance 'glyph))
+                                      '(vector glyph))))))
+            (n (screen term))
+            (n (alternate-screen term))))
     (when (> columns (columns term))
       (loop with last-tab = (position 1 (tabs term) :from-end t)
-            for i from (+ *tab-spaces* (or last-tab 0))
-              below columns by *tab-spaces*
-            do (setf (aref (tabs term) i) 1)))
+         for i from (+ *tab-spaces* (or last-tab 0))
+         below columns by *tab-spaces*
+         do (setf (aref (tabs term) i) 1)))
     ;; update terminal size
     (setf (slot-value term 'columns) columns
           (slot-value term 'rows) rows)
@@ -1592,10 +1593,12 @@ child process"
     ;; Clearing both screens (it makes dirty all lines)
     (let ((c (cursor term)))
       (loop repeat 2
-            do (when (and (< mincol columns) (< 0 minrow))
-                 (tclearregion mincol 0 (1- columns) (1- minrow) :term term))
-               (when (and (< 0 columns) (< minrow rows))
-                 (tclearregion 0 minrow (1- columns) (1- rows) :term term))
-               (tswapscreen :term term)
-               (tcursor :cursor-load :term term))
+         do (when (and (< mincol columns) (< 0 minrow))
+              (tclearregion mincol 0 (1- columns) (1- minrow) :term term))
+           (when (and (< 0 columns) (< minrow rows))
+             (tclearregion 0 minrow (1- columns) (1- rows) :term term))
+           (tswapscreen :term term)
+           (tcursor :cursor-load :term term))
+      (if (>= (x c) columns) (setf (x c) (1- columns)))
+      (if (>= (y c) rows) (setf (y c) (1- rows)))
       (setf (cursor term) c))))

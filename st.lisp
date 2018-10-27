@@ -369,7 +369,8 @@ to DEFAULt if not already set"
    (allow-alt-screen :accessor allow-alt-screen :initform t)
    (csi-escape :accessor csi-escape :initform (make-instance 'csi-escape))
    (str-escape :accessor str-escape :initform (make-instance 'str-escape))
-   (user-object :accessor user-object :initform nil)))
+   (user-object :accessor user-object :initform nil)
+   (set-title :accessor on-set-title :initform nil)))
 
 (defmethod initialize-instance :after ((term term) &key)
   (setf (slot-value term 'screen)
@@ -1111,7 +1112,9 @@ child process"
        (case par
          ((0 1 2)
           (when (> narg 1)
-            (format t "set title(~a) to ~s~%" par (aref args 1))
+            (let ((set-title (on-set-title term)))
+              (if set-title
+                  (funcall set-title term (aref args 1))))
             #++(xsettitle (aref args 1))))
          ((4 ;; color set
            104);; color reset

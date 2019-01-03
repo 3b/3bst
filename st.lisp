@@ -423,7 +423,8 @@ child process"
 
 
 (defun tty-write (characters &key (term *term*))
-  (format t "tty-write ~s~%" characters)
+  ;; (format t "tty-write ~s~%" characters)
+
   (when *write-to-child-hook*
     (funcall *write-to-child-hook* term characters)))
 

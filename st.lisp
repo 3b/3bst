@@ -849,11 +849,11 @@ child process"
             1047
             1048)
            (when (and (eql arg 1049)
-                      (not (allow-alt-screen term)))
+                      (allow-alt-screen term))
              (tcursor (if set :cursor-save :cursor-load)
                       :term term))
            (when (member arg '(1049 47 1047))
-             (unless (allow-alt-screen term)
+             (when (allow-alt-screen term)
                (let ((alt (logtest (mode term) +mode-altscreen+)))
                  (when alt
                    (tclearregion 0 0 (1- (columns term)) (1- (rows term))
